@@ -1,0 +1,86 @@
+version: '3.8'
+
+volumes:
+  production_postgres_data: {}
+  production_postgres_data_backups: {}
+  production_traefik: {}
+  production_django_media: {}
+
+services:
+  django: &django
+    build:
+      context: .
+      dockerfile: ./compose/production/django/Dockerfile
+    image: task_api_production_django
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - production_django_media:/app/task_api/media
+    env_file:
+      - ./.envs/.production/.django
+      - ./.envs/.production/.postgres
+    command: /start
+    restart: unless-stopped
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: task_api_production_postgres
+    volumes:
+      - production_postgres_data:/var/lib/postgresql/data
+      - production_postgres_data_backups:/backups
+    env_file:
+      - ./.envs/.production/.postgres
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  traefik:
+    build:
+      context: .
+      dockerfile: ./compose/production/traefik/Dockerfile
+    image: task_api_production_traefik
+    depends_on:
+      - django
+    volumes:
+      - production_traefik:/etc/traefik/acme
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celeryworker:
+    <<: *django
+    image: task_api_production_celeryworker
+    command: /start-celeryworker
+    ports: []
+    restart: unless-stopped
+
+  celerybeat:
+    <<: *django
+    image: task_api_production_celerybeat
+    command: /start-celerybeat
+    ports: []
+    restart: unless-stopped
+
+  flower:
+    <<: *django
+    image: task_api_production_flower
+    command: /start-flower
+    ports:
+      - "5555:5555"
+    restart: unless-stopped

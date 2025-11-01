@@ -1,0 +1,135 @@
+volumes:
+  task_api_local_postgres_data: {}
+  task_api_local_postgres_data_backups: {}
+
+networks:
+  task_api_network:
+    driver: bridge
+
+services:
+  django: &django
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile
+    image: task_api_local_django
+    pull_policy: build
+    container_name: task_api_local_django
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - .:/app:z
+    env_file:
+      - ./.envs/.local/.django
+      - ./.envs/.local/.postgres
+    ports:
+      - "8000:8000"
+    command: /start
+    networks:
+      - task_api_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/schema/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: task_api_production_postgres
+    pull_policy: build
+    container_name: task_api_local_postgres
+    volumes:
+      - task_api_local_postgres_data:/var/lib/postgresql/data
+      - task_api_local_postgres_data_backups:/backups
+    env_file:
+      - ./.envs/.local/.postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - task_api_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d task_api"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: task_api_local_redis
+    networks:
+      - task_api_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  celeryworker:
+    <<: *django
+    image: task_api_local_celeryworker
+    pull_policy: build
+    container_name: task_api_local_celeryworker
+    depends_on:
+      django:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    ports: []
+    command: /start-celeryworker
+    networks:
+      - task_api_network
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config.celery_app inspect ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  celerybeat:
+    <<: *django
+    image: task_api_local_celerybeat
+    pull_policy: build
+    container_name: task_api_local_celerybeat
+    depends_on:
+      django:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    ports: []
+    command: /start-celerybeat
+    networks:
+      - task_api_network
+
+  flower:
+    <<: *django
+    image: task_api_local_flower
+    pull_policy: build
+    container_name: task_api_local_flower
+    depends_on:
+      django:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "5555:5555"
+    command: /start-flower
+    networks:
+      - task_api_network
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: task_api_local_mailhog
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - task_api_network

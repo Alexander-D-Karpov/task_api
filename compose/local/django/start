@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+. /venv/bin/activate
+
+echo "Running migrations..."
+python manage.py migrate --noinput
+
+echo "Starting Django development server..."
+exec python manage.py runserver_plus 0.0.0.0:8000

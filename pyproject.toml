@@ -1,0 +1,163 @@
+[project]
+name = "task_api"
+version = "0.1.0"
+description = "Task Management API"
+authors = [{name = "Alexandr Karpov", email = "alexandr.d.karpov@gmail.com"}]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "django>=4.2,<5.0",
+    "djangorestframework>=3.14.0",
+    "djangorestframework-simplejwt>=5.3.0",
+    "psycopg2-binary>=2.9.5",
+    "django-filter>=23.2",
+    "drf-spectacular>=0.26.0",
+    "celery[redis]>=5.3.0",
+    "django-celery-beat>=2.5.0",
+    "redis>=4.5.0",
+    "django-redis>=5.4.0",
+    "python-dotenv>=1.0.0",
+    "pillow>=10.0.0",
+    "whitenoise>=6.5.0",
+    "django-environ>=0.11.0",
+    "argon2-cffi>=23.1.0",
+    "gunicorn>=21.2.0",
+    "sentry-sdk>=1.38.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-django>=4.5.0",
+    "pytest-cov>=4.1.0",
+    "pytest-sugar>=0.9.7",
+    "factory-boy>=3.3.0",
+    "faker>=19.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+    "django-stubs>=4.2.0",
+    "djangorestframework-stubs>=3.14.0",
+    "django-debug-toolbar>=4.2.0",
+    "django-extensions>=3.2.0",
+    "ipython>=8.15.0",
+    "watchfiles>=0.21.0",
+    "werkzeug[watchdog]>=3.0.0",
+    "django-coverage-plugin>=3.1.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["task_api", "config"]
+
+[tool.setuptools.package-data]
+task_api = ["*.txt", "*.rst", "*.md"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = [
+    ".git",
+    "__pycache__",
+    "*/migrations/*",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "logs",
+    "compose",
+    "utility",
+    "locale",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "W",
+    "I",
+    "N",
+    "UP",
+    "YTT",
+    "S",
+    "BLE",
+    "FBT",
+    "B",
+    "A",
+    "COM",
+    "C4",
+    "DTZ",
+    "T10",
+    "DJ",
+    "EM",
+    "ISC",
+    "ICN",
+    "G",
+    "INP",
+    "PIE",
+    "T20",
+    "PYI",
+    "PT",
+    "Q",
+    "RSE",
+    "RET",
+    "SLF",
+    "SIM",
+    "TID",
+    "TCH",
+    "ARG",
+    "PTH",
+    "ERA",
+    "PD",
+    "PGH",
+    "PL",
+    "TRY",
+    "NPY",
+    "RUF",
+]
+ignore = [
+    "S101",
+    "DJ001",
+    "RUF012",
+    "TRY003",
+    "EM101",
+    "PLR0913",
+    "N805",
+    "COM812",
+    "ISC001",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*/migrations/*" = ["ALL"]
+"*/tests/*" = ["S101", "PLR2004", "ARG001", "S105", "S106"]
+"conftest.py" = ["ARG001"]
+"manage.py" = ["INP001"]
+"**/config/settings/*.py" = ["F403", "F405"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["tests.py", "test_*.py"]
+addopts = "--migrations --cov=task_api --cov-report=html --cov-report=term-missing -v --reuse-db"
+testpaths = ["task_api"]
+
+[tool.mypy]
+python_version = "3.11"
+check_untyped_defs = true
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+
+[[tool.mypy.overrides]]
+module = "*.migrations.*"
+ignore_errors = true
+
+[tool.django-stubs]
+django_settings_module = "config.settings.test"
+
+[tool.coverage.run]
+source = ["task_api"]
+omit = ["*/migrations/*", "*/tests/*", "*/conftest.py"]

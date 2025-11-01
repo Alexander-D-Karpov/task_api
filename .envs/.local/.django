@@ -1,0 +1,12 @@
+USE_DOCKER=yes
+IPYTHONDIR=/app/.ipython
+REDIS_URL=redis://redis:6379/0
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_FLOWER_USER=admin
+CELERY_FLOWER_PASSWORD=admin
+
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=mailhog
+EMAIL_PORT=1025
+EMAIL_USE_TLS=False
+DEFAULT_FROM_EMAIL=noreply@taskapi.local

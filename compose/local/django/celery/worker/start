@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -o errexit
+set -o nounset
+
+. /venv/bin/activate
+
+exec watchfiles celery.__main__.main --args '-A config.celery_app worker -l INFO'

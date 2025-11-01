@@ -1,0 +1,918 @@
+openapi: 3.0.3
+info:
+  title: Task Management API
+  version: 1.0.0
+  description: API для системы управления задачами
+paths:
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: Аутентификация пользователя по email и паролю
+      summary: Получение JWT токена
+      tags:
+      - Аутентификация
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPairRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      description: Создание нового аккаунта пользователя
+      summary: Регистрация пользователя
+      tags:
+      - Аутентификация
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Register'
+          description: ''
+  /api/auth/token/refresh/:
+    post:
+      operationId: auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/tasks/:
+    get:
+      operationId: tasks_list
+      parameters:
+      - in: query
+        name: deadline_after
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: deadline_before
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: is_overdue
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: priority
+        schema:
+          type: array
+          items:
+            type: string
+            title: Приоритет
+            enum:
+            - high
+            - low
+            - medium
+        description: |-
+          * `low` - Низкий
+          * `medium` - Средний
+          * `high` - Высокий
+        explode: true
+        style: form
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: array
+          items:
+            type: string
+            title: Статус
+            enum:
+            - done
+            - in_progress
+            - new
+        description: |-
+          * `new` - Новая
+          * `in_progress` - В работе
+          * `done` - Завершена
+        explode: true
+        style: form
+      tags:
+      - tasks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTaskList'
+          description: ''
+    post:
+      operationId: tasks_create
+      tags:
+      - tasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+  /api/tasks/{id}/:
+    get:
+      operationId: tasks_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - tasks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+    put:
+      operationId: tasks_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - tasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+    patch:
+      operationId: tasks_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - tasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTaskRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTaskRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTaskRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+    delete:
+      operationId: tasks_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - tasks
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/tasks/{id}/share/:
+    post:
+      operationId: tasks_share_create
+      description: Предоставить доступ к задаче другому пользователю
+      summary: Поделиться задачей
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Расшаривание задач
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShareTaskRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShareTaskRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShareTaskRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareTask'
+          description: ''
+  /api/tasks/{id}/shares/:
+    get:
+      operationId: tasks_shares_list
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - tasks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTaskShareList'
+          description: ''
+  /api/tasks/shares/{id}/:
+    delete:
+      operationId: tasks_shares_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - tasks
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/:
+    get:
+      operationId: users_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserSearchList'
+          description: ''
+  /api/users/me/:
+    get:
+      operationId: users_me_retrieve
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+    put:
+      operationId: users_me_update
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdate'
+          description: ''
+    patch:
+      operationId: users_me_partial_update
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdate'
+          description: ''
+components:
+  schemas:
+    CustomTokenObtainPairRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    PaginatedTaskList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+    PaginatedTaskShareList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskShare'
+    PaginatedUserSearchList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSearch'
+    PatchedTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          title: Название
+          maxLength: 255
+        description:
+          type: string
+          title: Описание
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          title: Статус
+        priority:
+          allOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          title: Приоритет
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+          title: Крайний срок
+    PatchedUserUpdateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 150
+    PermissionEnum:
+      enum:
+      - view
+      - edit
+      type: string
+      description: |-
+        * `view` - Просмотр
+        * `edit` - Редактирование
+    PriorityEnum:
+      enum:
+      - low
+      - medium
+      - high
+      type: string
+      description: |-
+        * `low` - Низкий
+        * `medium` - Средний
+        * `high` - Высокий
+    Register:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email адрес
+          maxLength: 254
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 150
+      required:
+      - email
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          title: Email адрес
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 8
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 150
+      required:
+      - email
+      - password
+      - password_confirm
+    ShareTask:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        permission:
+          $ref: '#/components/schemas/PermissionEnum'
+      required:
+      - email
+      - permission
+    ShareTaskRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        permission:
+          $ref: '#/components/schemas/PermissionEnum'
+      required:
+      - email
+      - permission
+    StatusEnum:
+      enum:
+      - new
+      - in_progress
+      - done
+      type: string
+      description: |-
+        * `new` - Новая
+        * `in_progress` - В работе
+        * `done` - Завершена
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          title: Название
+          maxLength: 255
+        description:
+          type: string
+          title: Описание
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          title: Статус
+        priority:
+          allOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          title: Приоритет
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+          title: Крайний срок
+        owner:
+          type: integer
+          readOnly: true
+          title: Владелец
+        owner_email:
+          type: string
+          format: email
+          readOnly: true
+        is_overdue:
+          type: boolean
+          readOnly: true
+        shared_with:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата создания
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата обновления
+      required:
+      - created_at
+      - id
+      - is_overdue
+      - owner
+      - owner_email
+      - shared_with
+      - title
+      - updated_at
+    TaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          title: Название
+          maxLength: 255
+        description:
+          type: string
+          title: Описание
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          title: Статус
+        priority:
+          allOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          title: Приоритет
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+          title: Крайний срок
+      required:
+      - title
+    TaskShare:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        task:
+          type: integer
+          title: Задача
+        task_title:
+          type: string
+          readOnly: true
+        user:
+          type: integer
+          title: Пользователь
+        user_email:
+          type: string
+          format: email
+          readOnly: true
+        permission:
+          allOf:
+          - $ref: '#/components/schemas/PermissionEnum'
+          title: Уровень доступа
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата создания
+      required:
+      - created_at
+      - id
+      - task
+      - task_title
+      - user
+      - user_email
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    UserProfile:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Email адрес
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 150
+        full_name:
+          type: string
+          readOnly: true
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата регистрации
+        tasks_count:
+          type: integer
+          readOnly: true
+        shared_tasks_count:
+          type: integer
+          readOnly: true
+      required:
+      - date_joined
+      - email
+      - full_name
+      - shared_tasks_count
+      - tasks_count
+    UserSearch:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email адрес
+          maxLength: 254
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 150
+        full_name:
+          type: string
+          readOnly: true
+      required:
+      - email
+      - full_name
+    UserUpdate:
+      type: object
+      properties:
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 150
+    UserUpdateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 150
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+servers:
+- url: http://127.0.0.1:8000
+  description: Development server
+- url: https://akarpov.ru
+  description: Production server
