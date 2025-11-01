@@ -1,0 +1,34 @@
+# GitGuardian configuration file
+# https://docs.gitguardian.com/internal-repositories-monitoring/integrations/git_hooks/pre_commit
+
+version: 2
+
+# Paths to exclude from scanning
+paths-ignore:
+  - "**/*.md"
+  - "**/*.txt"
+  - "**/test/**"
+  - "**/tests/**"
+  - "**/.env.template"
+  - "**/.envs/**"
+  - "**/schema.yml"
+  - "**/compose/**"
+
+# Specific patterns to exclude
+matches-ignore:
+  # Django secret keys in settings files (they're examples/defaults for local dev)
+  - name: Django Secret Key
+    match: DJANGO_SECRET_KEY
+
+  # Test/example credentials
+  - name: Generic Password
+    match: postgres:postgres
+
+  - name: Generic Password
+    match: TestPass123!
+
+# Exclude test secret keys
+secret-ignore:
+  - C77n1xfCim5K8vgaU57QYyR9cMLDpN1HhNufhhcLt3R8Dw6b84rSPyNCqccF96P5  # test.py default key
+  - 5zVJCX5W7gCx2HjbeAvs4dsqtxSh28ZzdCbclCvkvrfhRxK2JIJriDVa2bsiiXug  # local.py default key
+  - ivQCybTKb1SOpgIed9NsWV6rbrioElb3vLgSiIMVGn4Zbc1FNSKCHd1clCUnRiFa  # production.py example key
